@@ -124,9 +124,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Guids.vb" />
-    <Compile Include="OptionPageGrid.vb">
-      <SubType>Component</SubType>
-    </Compile>
     <Compile Include="Resources.Designer.vb">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

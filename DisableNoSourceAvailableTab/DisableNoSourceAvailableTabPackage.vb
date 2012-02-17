@@ -9,6 +9,7 @@ Imports Microsoft.VisualStudio
 Imports Microsoft.VisualStudio.Shell.Interop
 Imports Microsoft.VisualStudio.OLE.Interop
 Imports Microsoft.VisualStudio.Shell
+Imports System.Reflection
 
 ''' <summary>
 ''' This is the class that implements the package exposed by this assembly.
@@ -25,14 +26,12 @@ Imports Microsoft.VisualStudio.Shell
 '
 ' The InstalledProductRegistration attribute is used to register the information needed to show this package
 ' in the Help/About dialog of Visual Studio.
-
+'.Debugging_string
 <PackageRegistration(UseManagedResourcesOnly:=True), _
 InstalledProductRegistration("#110", "#112", "1.0", IconResourceID:=400), _
-ProvideAutoLoad(VSConstants.UICONTEXT.Debugging_string), _
+ProvideAutoLoad(VSConstants.UICONTEXT.SolutionOpening_string), _
 ProvideMenuResource("Menus.ctmenu", 1), _
 Guid(GuidList.guidDisableNoSourceAvailableTab3PkgString)> _
-<ProvideOptionPage(GetType(OptionPageGrid), _
-    "Disable No Source Available Tab", "General", 0, 0, True)>
 Public NotInheritable Class DisableNoSourceAvailableTab
     Inherits Package
 
@@ -63,83 +62,58 @@ Public NotInheritable Class DisableNoSourceAvailableTab
 #End Region
 
     Private dte As EnvDTE.DTE
-    Public BadCaptions As New List(Of String)
 
     Protected Sub DoInitialize()
         Me.dte = DirectCast(GetGlobalService(GetType(EnvDTE.DTE)), EnvDTE.DTE)
-        Dim captions = New String() {"No Source Available", "Es ist keine Quelle verfügbar", "Aucune source disponible", "No hay código fuente disponible"}
-        For Each c In captions
-            Me.BadCaptions.Add(c)
-        Next
-        If Not String.IsNullOrWhiteSpace(Me.Settings.ExtraTabTitle) Then
-            Me.BadCaptions.Add(Me.Settings.ExtraTabTitle)
-        End If
-        AddHandler Me.dte.Events.WindowEvents.WindowActivated, AddressOf DTE_WindowActivated
-        AddHandler Me.dte.Events.WindowEvents.WindowCreated, AddressOf DTE_WindowCreated
-        'AddHandler Me.dte.Events.DocumentEvents.DocumentOpened, AddressOf DTE_DocumentOpened 'not triggered
-        'AddHandler Me.dte.Events.DebuggerEvents.OnEnterBreakMode, AddressOf DTE_OnEnterBreakMode
-        'AddHandler Me.dte.Events.OutputWindowEvents.PaneAdded, AddressOf DTE_PaneAdded
-        'AddHandler Me.dte.Events.WindowEvents.WindowClosing, AddressOf DTE_WindowClosing
-        'AddHandler Me.dte.Events.WindowEvents.WindowMoved, AddressOf DTE_WindowMoved
+        RemoveNoSourceToolWindow()
     End Sub
 
-    Private Sub DTE_WindowCreated(ByVal CreatedWindow As EnvDTE.Window)
-        If CreatedWindow IsNot Nothing _
-            AndAlso (Me.dte.Mode = EnvDTE.vsIDEMode.vsIDEModeDebug) _
-            AndAlso BadCaptions.Any(Function(s) CreatedWindow.Caption.Contains(s)) Then 'The guid should be {1820bae5-c385-4492-9de5-e35c9cf17b18}
-            Threading.ThreadPool.QueueUserWorkItem(New Threading.WaitCallback(AddressOf CleanTabs), CreatedWindow)
-        End If
-    End Sub
-
-    Private Sub DTE_WindowActivated(ByVal GotFocusWindow As EnvDTE.Window, ByVal LostFocusWindow As EnvDTE.Window)
-        'Trace.WriteLine("Deactivated a window: " & Convert.ToString(LostFocusWindow.Caption))
-        'Trace.WriteLine("Activated a new window: " & Convert.ToString(GotFocusWindow.Caption))
-        'AndAlso GotFocusWindow.Type = EnvDTE.vsWindowType.vsWindowTypeToolWindow _
-        DTE_WindowCreated(CreatedWindow:=GotFocusWindow)
-        'LostFocusWindow.Activate()
-    End Sub
-
-
-
-    Private Sub CleanTabs(ByVal e As Object)
+    Private Sub RemoveNoSourceToolWindow()
+        Dim guid = New Guid("BEB01DDF-9D2B-435B-A9E7-76557E2B6B52")
         Try
-            Dim Window = TryCast(e, EnvDTE.Window)
-            If Window IsNot Nothing Then
-                Window.Visible = False
-                Window.Close()
+            ' Remove the no soure tool window
+            ' Get the Razor package
+            Dim package As IVsPackage = Nothing
+            Dim shell As IVsShell = TryCast(Me.GetService(GetType(IVsShell)), IVsShell)
+
+            If shell IsNot Nothing Then
+                shell.IsPackageLoaded(guid, package)
             End If
-        Catch ex As Exception
-            Trace.WriteLine(ex.Message)
+            If package Is Nothing Then
+                shell.LoadPackage(guid, package)
+            End If
+
+            If package IsNot Nothing Then
+                ' Get the solution opened event handler and remove the NoSourceToolWindowAdapter delegate from it.
+                Dim packageType = package.[GetType]()
+                Dim eventInfo = packageType.GetEvent("SolutionOpened")
+                Dim fieldInfo = packageType.GetField(eventInfo.Name, AllBindings)
+                If fieldInfo IsNot Nothing Then
+                    Dim eventValue = TryCast(fieldInfo.GetValue(package), [Delegate])
+                    If eventValue IsNot Nothing Then
+                        Dim list = eventValue.GetInvocationList()
+                        For Each eventDelegate In list
+                            If eventDelegate.Target Is Nothing Then
+                                Continue For
+                            End If
+                            Dim targetType = eventDelegate.Target.[GetType]()
+                            If targetType.Name = "NoSourceToolWindowAdapter" Then
+                                eventInfo.RemoveEventHandler(package, eventDelegate)
+                            End If
+                        Next
+                    End If
+                End If
+
+            End If
+        Catch e As Exception
+            Throw e
         End Try
     End Sub
 
-    'Private Sub DTE_WindowCreated(ByVal Window As EnvDTE.Window)
-    '    MsgBox("Added a new window: " & Convert.ToString(Window.Document.Name))
-    'End Sub
-
-    'Private Sub DTE_DocumentOpened(ByVal Document As EnvDTE.Document)
-    '    Trace.WriteLine("Opened a new document: " & Convert.ToString(Document.Name))
-    'End Sub
-
-    'Private Sub DTE_OnEnterBreakMode(ByVal Reason As EnvDTE.dbgEventReason, ByRef ExecutionAction As EnvDTE.dbgExecutionAction)
-    '    Trace.WriteLine("DTE_OnEnterBreakMode: " & Convert.ToString(Reason))
-    'End Sub
-
-    'Private Sub DTE_PaneAdded(ByVal Pane As EnvDTE.OutputWindowPane)
-    '    Trace.WriteLine("DTE_PaneAdded: " & Convert.ToString(Pane.Name))
-    'End Sub
-
-    'Private Sub DTE_WindowClosing(ByVal Window As EnvDTE.Window)
-    '    Trace.WriteLine("DTE_WindowClosing: " & Convert.ToString(Window.Document.Name))
-    'End Sub
-
-    'Private Sub DTE_WindowMoved(ByVal Window As EnvDTE.Window, ByVal top As Integer, ByVal left As Integer, ByVal width As Integer, ByVal height As Integer)
-    '    Trace.WriteLine("DTE_WindowMoved: " & Convert.ToString(Window.Caption))
-    'End Sub
-
-    Protected ReadOnly Property Settings() As OptionPageGrid
+    Private Shared ReadOnly Property AllBindings() As BindingFlags
         Get
-            Return CType(GetDialogPage(GetType(OptionPageGrid)), OptionPageGrid)
+            Return BindingFlags.IgnoreCase Or BindingFlags.[Public] Or BindingFlags.NonPublic Or BindingFlags.Instance Or BindingFlags.[Static]
         End Get
     End Property
+
 End Class
