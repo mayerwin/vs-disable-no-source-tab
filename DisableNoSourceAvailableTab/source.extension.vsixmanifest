@@ -36,8 +36,29 @@ This extension should work with all locales of Visual Studio.</Description>
         <Edition>Pro</Edition>
         <Edition>VSLS</Edition>
       </VisualStudio>
+      <VisualStudio Version="13.0">
+        <Edition>Ultimate</Edition>
+        <Edition>Premium</Edition>
+        <Edition>Pro</Edition>
+        <Edition>VSLS</Edition>
+        <Edition>IntegratedShell</Edition>
+      </VisualStudio>
+      <VisualStudio Version="14.0">
+        <Edition>Ultimate</Edition>
+        <Edition>Premium</Edition>
+        <Edition>Pro</Edition>
+        <Edition>VSLS</Edition>
+        <Edition>IntegratedShell</Edition>
+      </VisualStudio>
+      <VisualStudio Version="15.0">
+        <Edition>Ultimate</Edition>
+        <Edition>Premium</Edition>
+        <Edition>Pro</Edition>
+        <Edition>VSLS</Edition>
+        <Edition>IntegratedShell</Edition>
+      </VisualStudio>
     </SupportedProducts>
-    <SupportedFrameworkRuntimeEdition MinVersion="1.0" MaxVersion="4.5" />
+    <SupportedFrameworkRuntimeEdition MinVersion="1.0" MaxVersion="4.6" />
   </Identifier>
   <References>
     <Reference Id="Microsoft.VisualStudio.MPF" MinVersion="10.0">

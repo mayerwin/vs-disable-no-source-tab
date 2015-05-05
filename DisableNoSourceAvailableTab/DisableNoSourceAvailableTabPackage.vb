@@ -63,7 +63,7 @@ Public NotInheritable Class DisableNoSourceAvailableTab
 
     Private dte As EnvDTE.DTE
 
-    Protected Sub DoInitialize()
+    Private Sub DoInitialize()
         Me.dte = DirectCast(GetGlobalService(GetType(EnvDTE.DTE)), EnvDTE.DTE)
         RemoveNoSourceToolWindow()
     End Sub
@@ -71,10 +71,10 @@ Public NotInheritable Class DisableNoSourceAvailableTab
     Private Sub RemoveNoSourceToolWindow()
         Dim guid = New Guid("BEB01DDF-9D2B-435B-A9E7-76557E2B6B52")
         Try
-            ' Remove the no soure tool window
+            ' Remove the no source tool window
             ' Get the Razor package
             Dim package As IVsPackage = Nothing
-            Dim shell As IVsShell = TryCast(Me.GetService(GetType(IVsShell)), IVsShell)
+            Dim shell = TryCast(Me.GetService(GetType(IVsShell)), IVsShell)
 
             If shell IsNot Nothing Then
                 shell.IsPackageLoaded(guid, package)
@@ -103,17 +103,15 @@ Public NotInheritable Class DisableNoSourceAvailableTab
                         Next
                     End If
                 End If
-
             End If
         Catch e As Exception
-            Throw e
+            Throw
         End Try
     End Sub
 
-    Private Shared ReadOnly Property AllBindings() As BindingFlags
+    Private Shared ReadOnly Property AllBindings As BindingFlags
         Get
             Return BindingFlags.IgnoreCase Or BindingFlags.[Public] Or BindingFlags.NonPublic Or BindingFlags.Instance Or BindingFlags.[Static]
         End Get
     End Property
-
 End Class
