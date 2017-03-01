@@ -1,9 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Vsix xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="1.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2010">
-  <Identifier Id="5126c493-138a-46d7-a04d-ad772f6be155">
-    <Name>Disable No Source Available Tab</Name>
-    <Author>Erwin Mayer</Author>
-    <Version>2.0</Version>
+<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+  <Metadata>
+    <Identity Id="5126c493-138a-46d7-a04d-ad772f6be155" Version="2.0" Language="en-US" Publisher="Erwin Mayer" />
+    <DisplayName>Disable No Source Available Tab</DisplayName>
     <Description xml:space="preserve">This small extension will prevent the tool window with title "No Source Available" from appearing in Visual Studio, and preserve the focus on the currently active tab.
 
 Alas, along with brilliant improvements such as IntelliTrace, Visual Studio otherwise displays a tab stating that it cannot find source code where to step into. This is obvious when simply pausing an idle application, therefore it forces the developer to close this window before getting back to the code he wants to modify, which may be a productivity killer. 
@@ -11,61 +10,26 @@ Alas, along with brilliant improvements such as IntelliTrace, Visual Studio othe
 Let's hope this extension will be short-term lived as the Visual Studio development team adds an option to better control this behavior!
 
 This extension should work with all locales of Visual Studio.</Description>
-    <Locale>1033</Locale>
-    <MoreInfoUrl>http://erwinmayer.com/labs/visual-studio-2010-extension-disable-no-source-available-tab</MoreInfoUrl>
+    <MoreInfo>http://erwinmayer.com/labs/visual-studio-2010-extension-disable-no-source-available-tab</MoreInfo>
     <License>License.txt</License>
     <Icon>Icon.png</Icon>
     <PreviewImage>Screenshot.png</PreviewImage>
-    <InstalledByMsi>false</InstalledByMsi>
-    <SupportedProducts>
-      <VisualStudio Version="10.0">
-        <Edition>Ultimate</Edition>
-        <Edition>Premium</Edition>
-        <Edition>Pro</Edition>
-        <Edition>VSLS</Edition>
-      </VisualStudio>
-      <VisualStudio Version="11.0">
-        <Edition>Ultimate</Edition>
-        <Edition>Premium</Edition>
-        <Edition>Pro</Edition>
-        <Edition>VSLS</Edition>
-      </VisualStudio>
-      <VisualStudio Version="12.0">
-        <Edition>Ultimate</Edition>
-        <Edition>Premium</Edition>
-        <Edition>Pro</Edition>
-        <Edition>VSLS</Edition>
-      </VisualStudio>
-      <VisualStudio Version="13.0">
-        <Edition>Ultimate</Edition>
-        <Edition>Premium</Edition>
-        <Edition>Pro</Edition>
-        <Edition>VSLS</Edition>
-        <Edition>IntegratedShell</Edition>
-      </VisualStudio>
-      <VisualStudio Version="14.0">
-        <Edition>Ultimate</Edition>
-        <Edition>Premium</Edition>
-        <Edition>Pro</Edition>
-        <Edition>VSLS</Edition>
-        <Edition>IntegratedShell</Edition>
-      </VisualStudio>
-      <VisualStudio Version="15.0">
-        <Edition>Ultimate</Edition>
-        <Edition>Premium</Edition>
-        <Edition>Pro</Edition>
-        <Edition>VSLS</Edition>
-        <Edition>IntegratedShell</Edition>
-      </VisualStudio>
-    </SupportedProducts>
-    <SupportedFrameworkRuntimeEdition MinVersion="1.0" MaxVersion="4.6" />
-  </Identifier>
-  <References>
-    <Reference Id="Microsoft.VisualStudio.MPF" MinVersion="10.0">
-      <Name>Visual Studio MPF</Name>
-    </Reference>
-  </References>
-  <Content>
-    <VsPackage>|%CurrentProject%;PkgdefProjectOutputGroup|</VsPackage>
-  </Content>
-</Vsix>
+    <Tags>Debugger, debugging, no source available, hide window, Quelle verfügbar, sources disponibles, Aucune source disponible, break mode</Tags>
+  </Metadata>
+  <Installation>
+    <InstallationTarget Version="[11.0,)" Id="Microsoft.VisualStudio.Community" />
+    <InstallationTarget Version="[11.0,)" Id="Microsoft.VisualStudio.Pro" />
+    <InstallationTarget Version="[11.0,)" Id="Microsoft.VisualStudio.Enterprise" />
+    <InstallationTarget Version="[11.0,)" Id="Microsoft.VisualStudio.IntegratedShell" />
+  </Installation>
+  <Dependencies>
+    <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.0,)" />
+    <Dependency Id="Microsoft.VisualStudio.MPF.11.0" DisplayName="Visual Studio MPF 11.0" d:Source="Installed" Version="[11.0,)" />
+  </Dependencies>
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
+  </Assets>
+  <Prerequisites>
+    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[11.0,)" DisplayName="Visual Studio core editor" />
+  </Prerequisites>
+</PackageManifest>
