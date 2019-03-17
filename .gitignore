@@ -1,5 +1,6 @@
 .vs/
 *.suo
+*.csproj.user
 *.vbproj.user
 *.bak
 [Bb]in
