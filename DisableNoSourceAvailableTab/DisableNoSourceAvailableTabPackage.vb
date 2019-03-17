@@ -1,117 +1,189 @@
-﻿Imports Microsoft.VisualBasic
-Imports System
-Imports System.Diagnostics
-Imports System.Globalization
-Imports System.Runtime.InteropServices
-Imports System.ComponentModel.Design
-Imports Microsoft.Win32
-Imports Microsoft.VisualStudio
-Imports Microsoft.VisualStudio.Shell.Interop
-Imports Microsoft.VisualStudio.OLE.Interop
+﻿Imports Microsoft.VisualStudio
 Imports Microsoft.VisualStudio.Shell
+Imports Microsoft.VisualStudio.Shell.Interop
 Imports System.Reflection
+Imports System.Runtime.InteropServices
+Imports System.Threading
 
-''' <summary>
-''' This is the class that implements the package exposed by this assembly.
-'''
-''' The minimum requirement for a class to be considered a valid package for Visual Studio
-''' is to implement the IVsPackage interface and register itself with the shell.
-''' This package uses the helper classes defined inside the Managed Package Framework (MPF)
-''' to do it: it derives from the Package class that provides the implementation of the 
-''' IVsPackage interface and uses the registration attributes defined in the framework to 
-''' register itself and its components with the shell.
-''' </summary>
-' The PackageRegistration attribute tells the PkgDef creation utility (CreatePkgDef.exe) that this class
-' is a package.
-'
-' The InstalledProductRegistration attribute is used to register the information needed to show this package
-' in the Help/About dialog of Visual Studio.
-'.Debugging_string
-<PackageRegistration(UseManagedResourcesOnly:=True), _
-InstalledProductRegistration("#110", "#112", "1.0", IconResourceID:=400), _
-ProvideAutoLoad(VSConstants.UICONTEXT.SolutionOpening_string), _
-ProvideMenuResource("Menus.ctmenu", 1), _
-Guid(GuidList.guidDisableNoSourceAvailableTab3PkgString)> _
+
+<PackageRegistration(UseManagedResourcesOnly:=True, AllowsBackgroundLoading:=True),
+InstalledProductRegistration("#110", "#112", "1.0", IconResourceID:=400),
+ProvideAutoLoad(VSConstants.UICONTEXT.SolutionOpening_string, PackageAutoLoadFlags.BackgroundLoad),
+ProvideMenuResource("Menus.ctmenu", 1),
+Guid(GuidList.guidDisableNoSourceAvailableTab3PkgString)>
 Public NotInheritable Class DisableNoSourceAvailableTab
-    Inherits Package
+    Inherits AsyncPackage
 
-    ''' <summary>
-    ''' Default constructor of the package.
-    ''' Inside this method you can place any initialization code that does not require 
-    ''' any Visual Studio service because at this point the package object is created but 
-    ''' not sited yet inside Visual Studio environment. The place to do all the other 
-    ''' initialization is the Initialize method.
-    ''' </summary>
-    Public Sub New()
-        Trace.WriteLine(String.Format(CultureInfo.CurrentCulture, "Entering constructor for: {0}", Me.GetType().Name))
-    End Sub
 
-    ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-    ' Overriden Package Implementation
-#Region "Package Members"
+    Protected Overrides Async Function InitializeAsync(cancellationToken As CancellationToken, progress As IProgress(Of ServiceProgressData)) As Tasks.Task
+        Dim shell As IVsShell
 
-    ''' <summary>
-    ''' Initialization of the package; this method is called right after the package is sited, so this is the place
-    ''' where you can put all the initilaization code that rely on services provided by VisualStudio.
-    ''' </summary>
-    Protected Overrides Sub Initialize()
-        Trace.WriteLine(String.Format(CultureInfo.CurrentCulture, "Entering Initialize() of: {0}", Me.GetType().Name))
-        MyBase.Initialize()
-        DoInitialize()
-    End Sub
-#End Region
+        ' Switch to the UI thread so we can consume some UI services.
+        Await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken)
 
-    Private dte As EnvDTE.DTE
+        shell = TryCast(Await GetServiceAsync(GetType(IVsShell)), IVsShell)
 
-    Private Sub DoInitialize()
-        Me.dte = DirectCast(GetGlobalService(GetType(EnvDTE.DTE)), EnvDTE.DTE)
-        RemoveNoSourceToolWindow()
-    End Sub
+        If shell IsNot Nothing Then
+            RemoveNoSourceToolWindow(shell)
+        End If
+    End Function
 
-    Private Sub RemoveNoSourceToolWindow()
-        Dim guid = New Guid("BEB01DDF-9D2B-435B-A9E7-76557E2B6B52")
+
+    Private Shared Sub RemoveNoSourceToolWindow(shell As IVsShell)
         Try
-            ' Remove the no source tool window
-            ' Get the Razor package
-            Dim package As IVsPackage = Nothing
-            Dim shell = TryCast(Me.GetService(GetType(IVsShell)), IVsShell)
+            Dim package As IVsPackage
 
-            If shell IsNot Nothing Then
-                shell.IsPackageLoaded(guid, package)
-            End If
-            If package Is Nothing Then
-                shell.LoadPackage(guid, package)
-            End If
+            package = GetRazorPackage(shell)
 
             If package IsNot Nothing Then
-                ' Get the solution opened event handler and remove the NoSourceToolWindowAdapter delegate from it.
-                Dim packageType = package.[GetType]()
-                Dim eventInfo = packageType.GetEvent("SolutionOpened")
-                Dim fieldInfo = packageType.GetField(eventInfo.Name, AllBindings)
-                If fieldInfo IsNot Nothing Then
-                    Dim eventValue = TryCast(fieldInfo.GetValue(package), [Delegate])
-                    If eventValue IsNot Nothing Then
-                        Dim list = eventValue.GetInvocationList()
-                        For Each eventDelegate In list
-                            If eventDelegate.Target Is Nothing Then
-                                Continue For
-                            End If
-                            Dim targetType = eventDelegate.Target.[GetType]()
-                            If targetType.Name = "NoSourceToolWindowAdapter" Then
-                                eventInfo.RemoveEventHandler(package, eventDelegate)
-                            End If
-                        Next
-                    End If
+                Dim assemblyTypes() As Type
+                Dim adapterType As Type
+                Dim debuggerEventsType As Type
+
+                assemblyTypes = package.GetType().Assembly.GetTypes()
+                adapterType = assemblyTypes.FirstOrDefault(Function(x) x.Name.Equals("NoSourceToolWindowAdapter"))
+
+                ' If the RazorPackage is loaded before a solution exists, the `NoSourceToolWindowAdapter` 
+                ' class will add an event handler for the `RazorPackage.SolutionOpened` event. If we remove
+                ' the handler for that event, then the debugger event handlers will never be added
+                ' and the tool window will never be shown. Try to remove that event handler now.
+                If adapterType IsNot Nothing Then
+                    RemoveSolutionOpenedHandler(package, adapterType)
+                End If
+
+                ' If the RazorPackage is loaded when a solution already exists, the debugger 
+                ' event handlers are added straight away. If we remove those event handlers, 
+                ' then the adapter won't know when the debugger is paused and won't show the 
+                ' tool window. These event handlers are also added by the `SolutionOpened` event 
+                ' handler. If a solution is already open, but was opened after the RazorPackage 
+                ' was loaded, then both the `SolutionOpened` event handler and the debugger 
+                ' event handlers will have been added, which is why we always try to remove 
+                ' these handlers, even if we removed the `SolutionOpened` event handler above.
+                debuggerEventsType = assemblyTypes.FirstOrDefault(Function(x) x.Name.Equals("DebuggerEvents"))
+
+                If debuggerEventsType IsNot Nothing Then
+                    RemoveDebuggerEventHandler(debuggerEventsType, "DebuggerEvent", adapterType)
+                    RemoveDebuggerEventHandler(debuggerEventsType, "ModeChanged", adapterType)
                 End If
             End If
+
         Catch e As Exception
             Throw
         End Try
     End Sub
 
-    Private Shared ReadOnly Property AllBindings As BindingFlags
-        Get
-            Return BindingFlags.IgnoreCase Or BindingFlags.[Public] Or BindingFlags.NonPublic Or BindingFlags.Instance Or BindingFlags.[Static]
-        End Get
-    End Property
+
+    Private Shared Function GetRazorPackage(shell As IVsShell) As IVsPackage
+        Dim guid = New Guid("BEB01DDF-9D2B-435B-A9E7-76557E2B6B52")
+        Dim package As IVsPackage = Nothing
+
+        shell.IsPackageLoaded(guid, package)
+
+        If package Is Nothing Then
+            shell.LoadPackage(guid, package)
+        End If
+
+        Return package
+    End Function
+
+
+    Private Shared Function GetNoSourceToolWindowAdapter(packageType As Type) As Object
+        Dim adapterType As Type
+
+        adapterType = packageType.Assembly.GetTypes().FirstOrDefault(Function(x) x.Name.Equals("NoSourceToolWindowAdapter"))
+
+        If adapterType IsNot Nothing Then
+            Return adapterType.GetProperty("Instance", BindingFlags.Public Or BindingFlags.Static Or BindingFlags.GetProperty)
+        End If
+
+        Return Nothing
+    End Function
+
+
+    Private Shared Sub RemoveSolutionOpenedHandler(package As IVsPackage, targetType As Type)
+        Dim packageType As Type
+        Dim eventInfo As EventInfo
+
+        packageType = package.GetType()
+        eventInfo = packageType.GetEvent("SolutionOpened")
+
+        If eventInfo IsNot Nothing Then
+            Dim field As FieldInfo
+
+            ' Find the backing field so that we can get the handlers
+            ' and find the handler that comes from the target type.
+            field = packageType.GetField(eventInfo.Name, BindingFlags.NonPublic Or BindingFlags.Static)
+
+            If field IsNot Nothing Then
+                Dim eventValue As [Delegate]
+
+                eventValue = TryCast(field.GetValue(package), [Delegate])
+
+                If eventValue IsNot Nothing Then
+                    Dim handler As [Delegate]
+
+                    handler = eventValue.GetInvocationList().FirstOrDefault(Function(x) x.Target?.GetType() = targetType)
+
+                    If handler IsNot Nothing Then
+                        eventInfo.RemoveEventHandler(package, handler)
+                    End If
+                End If
+            End If
+        End If
+    End Sub
+
+
+    Private Shared Sub RemoveDebuggerEventHandler(debuggerEventType As Type, eventName As String, targetType As Type)
+        Dim eventInfo As EventInfo
+
+        eventInfo = debuggerEventType.GetEvent(eventName)
+
+        If eventInfo IsNot Nothing Then
+            Dim field As FieldInfo
+
+            ' The event handlers are stored in a "weak event" collection. Look for a backing field
+            ' that is a `WeakEventDelegateCollection` for the type of the event handler.
+            field = (
+                From f In debuggerEventType.GetFields(BindingFlags.NonPublic Or BindingFlags.Static)
+                Where f.FieldType.IsGenericType
+                Where f.FieldType.Name = "WeakEventDelegateCollection`1"
+                Where f.FieldType.GetGenericArguments()(0) = eventInfo.EventHandlerType
+            ).FirstOrDefault()
+
+            If field IsNot Nothing Then
+                Dim collection As Object
+                Dim collectionType As Type
+                Dim list As Object
+                Dim handler As [Delegate]
+
+                collection = field.GetValue(Nothing)
+                collectionType = collection.GetType()
+
+                ' The collection has a private `ActiveList` property that gets 
+                ' all handler delegates that are still alive. Get that list.
+                list = collectionType.InvokeMember(
+                    "ActiveList",
+                    BindingFlags.Instance Or BindingFlags.NonPublic Or BindingFlags.GetProperty,
+                    Nothing,
+                    collection,
+                    New Object() {}
+                )
+
+                ' Find the handler for the target type and remove 
+                ' it by calling the `Remove` method on the collection.
+                handler = DirectCast(list, IEnumerable).OfType(Of [Delegate]).FirstOrDefault(Function(x) x.Target?.GetType() = targetType)
+
+                If handler IsNot Nothing Then
+                    collectionType.InvokeMember(
+                        "Remove",
+                        BindingFlags.Instance Or BindingFlags.Public Or BindingFlags.InvokeMethod,
+                        Nothing,
+                        collection,
+                        New Object() {handler}
+                    )
+                End If
+            End If
+        End If
+    End Sub
+
 End Class
