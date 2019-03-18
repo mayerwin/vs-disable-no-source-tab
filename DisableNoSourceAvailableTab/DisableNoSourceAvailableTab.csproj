@@ -74,11 +74,12 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="15.9.3" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.VisualStudio.SDK.Analyzers">
       <Version>15.8.36</Version>
     </PackageReference>
-    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="16.0.2262" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.14.0">
+      <Version>14.3.25407</Version>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Icon.png">

@@ -9,7 +9,7 @@ namespace ErwinMayerLabs.DisableNoSourceAvailableTab
     {
         public const string Id = "5126c493-138a-46d7-a04d-ad772f6be155";
         public const string Name = "Disable No Source Available Tab";
-        public const string Description = @"This small extension will prevent the tool window with title ""No Source Available"" from appearing in Visual Studio, and preserve the focus on the currently active tab.
+        public const string Description = @"This small extension will prevent the tool window with title 'No Source Available' from appearing in Visual Studio, and preserve the focus on the currently active tab.
 
 Alas, along with brilliant improvements such as IntelliTrace, Visual Studio otherwise displays a tab stating that it cannot find source code where to step into. This is obvious when simply pausing an idle application, therefore it forces the developer to close this window before getting back to the code he wants to modify, which may be a productivity killer. 
 
@@ -17,7 +17,7 @@ Let's hope this extension will be short-term lived as the Visual Studio developm
 
 This extension should work with all locales of Visual Studio.";
         public const string Language = "en-US";
-        public const string Version = "3.0";
+        public const string Version = "3.2";
         public const string Author = "Erwin Mayer";
         public const string Tags = "Debugger, debugging, no source available, hide window, Quelle verfügbar, sources disponibles, Aucune source disponible, break mode";
     }

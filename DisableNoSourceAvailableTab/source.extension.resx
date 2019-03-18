@@ -121,7 +121,7 @@
     <value>Disable No Source Available Tab</value>
   </data>
   <data name="112" xml:space="preserve">
-    <value>This small extension will prevent the tool window with title "No Source Available" from appearing in Visual Studio, and preserve the focus on the currently active tab.
+    <value>This small extension will prevent the tool window with title 'No Source Available' from appearing in Visual Studio, and preserve the focus on the currently active tab.
 
 Alas, along with brilliant improvements such as IntelliTrace, Visual Studio otherwise displays a tab stating that it cannot find source code where to step into. This is obvious when simply pausing an idle application, therefore it forces the developer to close this window before getting back to the code he wants to modify, which may be a productivity killer. 
 
