@@ -1,39 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
-  <Metadata>
-    <Identity Id="DisableNoSourceAvailableTab2022.4becf1b1-8830-465c-aa62-3b156da88454" Version="4.0.0" Language="en-US" Publisher="Erwin Mayer" />
-	<DisplayName>Disable No Source Available Tab</DisplayName>
-	<Description xml:space="preserve">This small extension will prevent the tool window with title 'No Source Available' from appearing in Visual Studio, and preserve the focus on the currently active tab.
+    <Metadata>
+        <Identity Id="5126c493-138a-46d7-a04d-ad772f6be155" Version="4.0.1" Language="en-US" Publisher="Erwin Mayer" />
+        <DisplayName>Disable No Source Available Tab</DisplayName>
+        <Description xml:space="preserve">This small extension will prevent the tool window with title 'No Source Available' from appearing in Visual Studio, and preserve the focus on the currently active tab.
 
 Alas, along with brilliant improvements such as IntelliTrace, Visual Studio otherwise displays a tab stating that it cannot find source code where to step into. This is obvious when simply pausing an idle application, therefore it forces the developer to close this window before getting back to the code he wants to modify, which may be a productivity killer. 
 
 Let's hope this extension will be short-term lived as the Visual Studio development team adds an option to better control this behavior!
 
 This extension should work with all locales of Visual Studio.</Description>
-	<MoreInfo>https://erwinmayer.com/labs/visual-studio-2010-extension-disable-no-source-available-tab</MoreInfo>
-	<License>License.txt</License>
-	<Icon>Icon.png</Icon>
-	<PreviewImage>Screenshot.png</PreviewImage>
-	<Tags>Debugger, debugging, no source available, hide window, Quelle verfügbar, sources disponibles, Aucune source disponible, break mode</Tags>
-  </Metadata>
-	<Installation>
-		<InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,)">
-			<ProductArchitecture>amd64</ProductArchitecture>
-		</InstallationTarget>
-		<InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[17.0,)">
-			<ProductArchitecture>amd64</ProductArchitecture>
-		</InstallationTarget>
-		<InstallationTarget Id="Microsoft.VisualStudio.Enterprise" Version="[17.0,)">
-			<ProductArchitecture>amd64</ProductArchitecture>
-		</InstallationTarget>
-	</Installation>
-  <Dependencies>
-    <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />
-  </Dependencies>
-  <Prerequisites>
-    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[17.0,)" DisplayName="Visual Studio core editor" />
-  </Prerequisites>
-  <Assets>
-    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
-  </Assets>
+        <MoreInfo>https://erwinmayer.com/labs/visual-studio-2010-extension-disable-no-source-available-tab</MoreInfo>
+        <License>License.txt</License>
+        <Icon>Icon.png</Icon>
+        <PreviewImage>Screenshot.png</PreviewImage>
+        <Tags>Debugger, debugging, no source available, hide window, Quelle verfügbar, sources disponibles, Aucune source disponible, break mode</Tags>
+    </Metadata>
+    <Installation>
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,)">
+            <ProductArchitecture>amd64</ProductArchitecture>
+        </InstallationTarget>
+        <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[17.0,)">
+            <ProductArchitecture>amd64</ProductArchitecture>
+        </InstallationTarget>
+        <InstallationTarget Id="Microsoft.VisualStudio.Enterprise" Version="[17.0,)">
+            <ProductArchitecture>amd64</ProductArchitecture>
+        </InstallationTarget>
+    </Installation>
+    <Dependencies>
+        <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />
+    </Dependencies>
+    <Prerequisites>
+        <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[17.0,)" DisplayName="Visual Studio core editor" />
+    </Prerequisites>
+    <Assets>
+        <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
+    </Assets>
 </PackageManifest>
