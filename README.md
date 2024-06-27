@@ -9,7 +9,7 @@ http://erwinmayer.com/labs/visual-studio-2010-extension-disable-no-source-availa
 
 **Description**
 
-This small extension will prevent the tool window with title "No Source Available" from appearing in Visual Studio, and preserve the focus on the currently active tab.
+This small extension will prevent the tool window with title "Break Mode" or "No Source Available" from appearing in Visual Studio, and preserve the focus on the currently active tab.
 
 **Supported editions**
 
