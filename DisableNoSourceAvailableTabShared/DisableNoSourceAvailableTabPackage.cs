@@ -1,9 +1,9 @@
-﻿using Microsoft.VisualStudio;
+﻿using EnvDTE;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Collections;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -29,14 +29,16 @@ namespace ErwinMayerLabs.DisableNoSourceAvailableTab {
     /// </para>
     /// </remarks>
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
-    [InstalledProductRegistration("#110", "#112", "4.0", IconResourceID = 400)]
-    [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionOpening_string, PackageAutoLoadFlags.BackgroundLoad)]
+    [InstalledProductRegistration("#110", "#112", "4.0.5", IconResourceID = 400)]
+    //[ProvideAutoLoad(VSConstants.UICONTEXT.Debugging_string, PackageAutoLoadFlags.BackgroundLoad)]
+    //[ProvideAutoLoad(VSConstants.UICONTEXT.SolutionOpening_string, PackageAutoLoadFlags.BackgroundLoad)]
+    //[ProvideAutoLoad(VSConstants.UICONTEXT.NoSolution_string, PackageAutoLoadFlags.BackgroundLoad)]
+    //[ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string, PackageAutoLoadFlags.BackgroundLoad)]
+    //[ProvideAutoLoad(VSConstants.UICONTEXT.SolutionHasMultipleProjects_string, PackageAutoLoadFlags.BackgroundLoad)]
+    //[ProvideAutoLoad(VSConstants.UICONTEXT.SolutionHasSingleProject_string, PackageAutoLoadFlags.BackgroundLoad)]
+    [ProvideAutoLoad(VSConstants.UICONTEXT.Debugging_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [Guid(GuidList.guidDisableNoSourceAvailableTabPkgString)]
-    [ProvideAutoLoad(VSConstants.UICONTEXT.NoSolution_string, PackageAutoLoadFlags.BackgroundLoad)]
-    [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string, PackageAutoLoadFlags.BackgroundLoad)]
-    [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionHasMultipleProjects_string, PackageAutoLoadFlags.BackgroundLoad)]
-    [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionHasSingleProject_string, PackageAutoLoadFlags.BackgroundLoad)]
     public sealed class DisableNoSourceAvailableTabPackage : AsyncPackage {
         #region Package Members
 
@@ -60,6 +62,7 @@ namespace ErwinMayerLabs.DisableNoSourceAvailableTab {
         #endregion
 
         private static void RemoveNoSourceToolWindow(IVsShell shell) {
+            WriteOutput("RemoveNoSourceToolWindow started");
             try {
                 var package = GetRazorPackage(shell);
 
@@ -86,13 +89,23 @@ namespace ErwinMayerLabs.DisableNoSourceAvailableTab {
                     var debuggerEventsType = assemblyTypes.FirstOrDefault(x => x.Name.Equals("DebuggerEvents"));
 
                     if (debuggerEventsType != null) {
-                        RemoveDebuggerEventHandler(debuggerEventsType, "DebuggerEvent", adapterType);
-                        RemoveDebuggerEventHandler(debuggerEventsType, "ModeChanged", adapterType);
+                        try {
+                            RemoveDebuggerEventHandler(debuggerEventsType, "DebuggerEvent", adapterType);
+                        }
+                        catch (Exception ex) {
+                            WriteOutput("RemoveNoSourceToolWindow failed: " + ex);
+                        }
+                        try {
+                            RemoveDebuggerEventHandler(debuggerEventsType, "ModeChanged", adapterType);
+                        }
+                        catch (Exception ex) {
+                            WriteOutput("RemoveNoSourceToolWindow failed: " + ex);
+                        }
                     }
                 }
             }
-            catch (Exception e) {
-                Trace.WriteLine(e.ToString());
+            catch (Exception ex) {
+                WriteOutput("RemoveNoSourceToolWindow failed: " + ex);
             }
         }
 
@@ -107,7 +120,6 @@ namespace ErwinMayerLabs.DisableNoSourceAvailableTab {
             return package;
         }
 
-
         private static object GetNoSourceToolWindowAdapter(Type packageType) {
             var adapterType = packageType.Assembly.GetTypes().FirstOrDefault(x => x.Name.Equals("NoSourceToolWindowAdapter"));
 
@@ -116,7 +128,6 @@ namespace ErwinMayerLabs.DisableNoSourceAvailableTab {
             }
             return null;
         }
-
 
         private static void RemoveSolutionOpenedHandler(IVsPackage package, Type targetType) {
             var packageType = package.GetType();
@@ -158,7 +169,7 @@ namespace ErwinMayerLabs.DisableNoSourceAvailableTab {
 
                     // The collection has a private `ActiveList` property that gets 
                     // all handler delegates that are still alive. Get that list.
-                    var list = collectionType.InvokeMember("ActiveList", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.GetProperty, null, collection, new object[] { }
+                    var list = collectionType.InvokeMember("GetActiveList", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.InvokeMethod, null, collection, new object[] { }
                     );
 
                     // Find the handler for the target type and remove 
@@ -169,6 +180,25 @@ namespace ErwinMayerLabs.DisableNoSourceAvailableTab {
                         collectionType.InvokeMember("Remove", BindingFlags.Instance | BindingFlags.Public | BindingFlags.InvokeMethod, null, collection, new object[] { handler });
                     }
                 }
+            }
+        }
+
+        public static void WriteOutput(string str, params object[] args) {
+            return;
+            try {
+                Globals.InvokeOnUIThread(() => {
+                    ThreadHelper.ThrowIfNotOnUIThread();
+                    var generalPaneGuid = VSConstants.OutputWindowPaneGuid.DebugPane_guid;
+                    // P.S. There's also the VSConstants.GUID_OutWindowDebugPane available.
+                    if (GetGlobalService(typeof(SVsOutputWindow)) is IVsOutputWindow outWindow) {
+                        outWindow.GetPane(ref generalPaneGuid, out IVsOutputWindowPane generalPane);
+                        generalPane.OutputString("DisableNoSourceAvailableTab: " + string.Format(str, args) + "\r\n");
+                        generalPane.Activate();
+                    }
+                });
+            }
+            catch {
+                // ignored
             }
         }
     }

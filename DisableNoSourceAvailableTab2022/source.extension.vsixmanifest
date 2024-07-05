@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="5126c493-138a-46d7-a04d-ad772f6be155" Version="4.0.2" Language="en-US" Publisher="Erwin Mayer" />
+        <Identity Id="5126c493-138a-46d7-a04d-ad772f6be155" Version="4.0.5" Language="en-US" Publisher="Erwin Mayer" />
         <DisplayName>Disable Break Mode &amp; No Source Available Tab</DisplayName>
         <Description xml:space="preserve">This small extension will prevent the tool window with title 'No Source Available' or 'Break Mode' from appearing in Visual Studio, and preserve the focus on the currently active tab.
 
